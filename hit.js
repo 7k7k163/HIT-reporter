@@ -2,13 +2,18 @@ const cookieName = 'hit'
 const cookieKey = 'BYYB_cookie_hit'
 const BYYB = init()
 const cookieVal = BYYB.getdata(cookieKey)
+let times = 1
 
-add()
+isSuccess()
+
+function isSuccess(){
+    BYYB.setdata('00',`state`)
+    BYYB.log(`start: ${BYYB.getdata(`state`)}`)
+    add()
+}
 
 //新增一个上报
 function add() {
-	getToken()
-	getToken()
 	let url = {
 		url: `https://xg.hit.edu.cn/zhxy-xgzs/xg_mobile/xsMrsb/csh`,
 		headers: {
@@ -20,11 +25,12 @@ function add() {
 	url.headers['Host'] = 'xg.hit.edu.cn'
 	url.headers['User-Agent'] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_4_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/604.1'
 	BYYB.post(url, (error, response, data) => {
-		//BYYB.log(`${cookieVal}, data: ${data}.    `)
-		report()
-		report()
+		BYYB.log(`${cookieVal}, data: ${data}.    `)
+          getToken()
+   
     })
 }
+
 function getToken() {
     let url = {
 		url: `https://xg.hit.edu.cn/zhxy-xgzs/xg_mobile/xs/getYqxxList`,
@@ -40,9 +46,14 @@ function getToken() {
     BYYB.post(url, (error, response, data) => {
 		let tokens = JSON.parse(`${response.body}`)
 		let token =`${tokens.module.data[0].id}`
-		BYYB.setdata(token,`token`)
+		let state =`${tokens.module.data[0].zt}`
+          BYYB.setdata(token,`token`)
+          BYYB.setdata(state,`state`)
+          //BYYB.setdata('00',`state`)
 		//BYYB.log(`token: ${response.body}`)
-		//BYYB.log(`${BYYB.getdata(`token`)}`)
+		BYYB.log(`token: ${BYYB.getdata(`token`)}`)
+          BYYB.log(`state: ${BYYB.getdata(`state`)}`)
+          report()
     })
 }
 function report() {
@@ -68,9 +79,22 @@ function report() {
     BYYB.post(url, (error, response, data) => {
 		//BYYB.log(`statu: ${response.statusCode}`)
 		//BYYB.log(`https://xg.hit.edu.cn/zhxy-xgzs/xg_mobile/xsMrsb/editMrsb?id=${`${BYYB.getdata(`token`)}`}&zt=00`)
-		BYYB.log(`成功！: ${response.body}`)
-		BYYB.msg(`成功!`)
-		BYYB.done()
+          if(BYYB.getdata(`state`) == '01'){
+              BYYB.log(`report: ${BYYB.getdata(`state`)}`)
+              BYYB.msg(`上报成功!`)
+              BYYB.done()
+          }else{
+              if(times == 5){
+                  BYYB.msg(`上报失败!`)
+                  BYYB.done()
+              }else{
+                  times++
+                  BYYB.log(times)
+                  add()
+              }
+          }
+		//BYYB.log(`成功！: ${response.body}`)
+		//BYYB.done()
     })
 }
 
